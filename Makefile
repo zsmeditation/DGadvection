@@ -1,15 +1,24 @@
-# Default target (this line must go first)
-all: dg
-
 # Compiler definitions
 # the compiler: gcc for C program
 CC = gcc
 # copiler flags:
 #  -02 -g for optimization/debugging
-CFLAGS = -O2 -g
+CFLAGS = -Wall -Wextra -O2 -g
 # library flags:
 #  -lm: link <math.h> library 
 LFLAGS = -lm
+
+# Get config.h vars
+N1D=$(shell awk <config.h '$$2 == "N1D" { print $$3; }')
+InterpolationOrder=$(shell awk <config.h '$$2 == "InterpolationOrder" { print $$3; }')
+Nt=$(shell awk <config.h '$$2 == "Nt" { print $$3; }')
+
+# Make this executable
+executable_name=dg_n$(N1D)_p$(InterpolationOrder)_t$(Nt)
+
+# Default target (convention)
+.PHONY: all
+all: $(executable_name)
 
 # Sources and headers
 srcs = dg.c
@@ -27,10 +36,15 @@ objs = $(patsubst %.c,%.o,$(srcs))
 	$(CC) $(CFLAGS) -c $^
 
 # Link executable
-dg: $(objs) $(headers)
-	$(CC) $(objs) $(LFLAGS) -o $@
+$(executable_name): $(objs) $(headers)
+	$(CC) $(LFLAGS) $(objs) -o $@
+	rm -f dg
+	ln -s $@ dg
 
 # Clean executables
 #  RM = "rm -f"
 clean:
-	$(RM) dg *.o
+	rm -f *.o
+	rm -f dg_n*_p*_t*
+	rm -f dg
+	rm all.pbs
