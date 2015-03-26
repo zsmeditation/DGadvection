@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-./dg > result.txt

@@ -2,24 +2,35 @@
 all: dg
 
 # Compiler definitions
-CC=gcc
-CFLAGS=-O2 -g
-LFLAGS=-lm
+# the compiler: gcc for C program
+CC = gcc
+# copiler flags:
+#  -02 -g for optimization/debugging
+CFLAGS = -O2 -g
+# library flags:
+#  -lm: link <math.h> library 
+LFLAGS = -lm
 
 # Sources and headers
-srcs=dg.c
-headers=dg.h
+srcs = dg.c
+headers = dg.h
 
 # Objects from sources
-objs=$(patsubst %.c,%.o,$(srcs))
+#  patsubst: function that replace pattern in text
+objs = $(patsubst %.c,%.o,$(srcs))
 
 # Rule to compile sources
+#  for rule manual, refer to gnu.org about GNU make
+#  -c: compile source files without linking
+#  automatic variables: $^ for names of all prerequisites, $@ for name of target
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^
 
 # Link executable
 dg: $(objs) $(headers)
-	$(CC) $(LFLAGS) $(objs) -o $@
+	$(CC) $(objs) $(LFLAGS) -o $@
 
+# Clean executables
+#  RM = "rm -f"
 clean:
-	rm -f $@
+	$(RM) dg *.o
