@@ -1,0 +1,20 @@
+#!/bin/bash
+#PBS -S /bin/bash
+#PBS -N TEMPLATE_CASE
+#PBS -l nodes=1:ppn=1,walltime=10:00:00,qos=flux
+#PBS -A kfid_flux
+#PBS -q flux
+#PBS -M shunz@umich.edu
+#PBS -m abe
+#PBS -V
+
+echo "I ran on:"
+cat $PBS_NODEFILE
+
+cd $PBS_O_WORKDIR
+
+NPROC=1
+
+CASE="TEMPLATE_CASE"
+
+./${CASE}.out > ${CASE}.dat
