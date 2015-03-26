@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 // Include own header file
-#include "header.h"
+#include "dg.h"
 /******************************************************************/
 // Main function
 int main(int argc, char *argv[])

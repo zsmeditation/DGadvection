@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 VP=(1 2 3 4)
 VT=(40 40 40 40)
@@ -15,7 +15,7 @@ do
 		let NbTimeStep=${VT[$ip]}*Fold
 		pref="p${VP[ip]}ne${VE[$ie]}nt${NbTimeStep}"
         
-        cat header.h | \
+        cat dg.h | \
         sed "s/NbSideElem/${VE[$ie]}/g" | \
         sed "s/OrderOfApprox/${VP[$ip]}/g" > ${pref}.h
         
