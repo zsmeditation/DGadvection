@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
+#  env: run a program in a modified environment
 
 file=config.h
 
+# what is this var expansion rule ???
 nelem=${1:-8}
 order=${2:-1}
 ntime=${3:-40}
@@ -9,6 +11,9 @@ ntime=${3:-40}
 printf 'nelem=%d order=%d ntimestep=%d\n' $nelem $order $ntime
 
 rm -f $file
+ 
+# use "cat <<EOF" to expand multiple lines of strings
+#  #ifndef/endif pair checks if token "_CONFIG_H" has (or not) been #DEFINE
 cat >$file <<EOF
 #ifndef _CONFIG_H
 #define _CONFIG_H
