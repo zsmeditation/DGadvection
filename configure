@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#  env: run a program in a modified environment
+
+file=config.h
+
+# what is this var expansion rule ???
+nelem=${1:-8}
+order=${2:-1}
+ntime=${3:-40}
+
+printf 'nelem=%d order=%d ntimestep=%d\n' $nelem $order $ntime
+
+rm -f $file
+ 
+# use "cat <<EOF" to expand multiple lines of strings
+#  #ifndef/endif pair checks if token "_CONFIG_H" has (or not) been #DEFINE
+cat >$file <<EOF
+#ifndef _CONFIG_H
+#define _CONFIG_H
+#define Nt $ntime                 //NbTimeStep; //number of time steps
+#define N1D $nelem                //NbSideElem // number of elements in each dimension
+#define InterpolationOrder $order //OrderOfApprox // order of approximating polynomial
+#endif // _CONFIG_H
+EOF

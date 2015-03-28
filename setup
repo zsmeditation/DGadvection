@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+VP=(1 2 3 4)
+VT=(40 40 40 40)
+VE=(8 16 32 64 128)
+
+Fold=1
+
+rm -f all.pbs
+
+for ((ie=0;ie<${#VE[@]};++ie)); do
+    for ((ip=0;ip<${#VP[@]};++ip)); do
+        N1D="${VE[$ie]}"
+        InterpolationOrder="${VP[$ip]}"
+        Nt=$((${VT[$ip]}*Fold))
+        ./configure $N1D $InterpolationOrder $Nt
+        make
+
+	pref="dg_n${N1D}_p${InterpolationOrder}_t${Nt}"
+        sed "s/TEMPLATE_CASE/${pref}/g" <template.pbs >${pref}.pbs
+
+        echo "qsub ${pref}.pbs" >> all.pbs
+    done
+    let Fold=Fold*2
+done

@@ -13,8 +13,7 @@ int main(int argc, char *argv[])
   double L = 1.0; //length of computational domain; square in x,y
   double T = 1.0; //extent of time domain
   double V[2] = {1.0, 0.0}; //V[0] and V[1] are x,y components of advection velocity
-  int Nt = 40;//NbTimeStep; //number of time steps
-  int p = InterpolationOrder; //interpolation order of solution approximation in psace
+  int p = InterpolationOrder; //interpolation order of solution approximation in space
   int N = N1D;
   int Nelem = NbElement2D; //number of quad elements along 1D and of 2D
   int nq1 = NbQuadrPt1D, nq2 = NbQuadrPt2D; //number of coefficients per 1D/2D basis

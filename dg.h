@@ -1,10 +1,13 @@
+#ifndef _DG_H
+#define _DG_H
+
+#include "config.h"
+
 /******************************************************************/
-// Define macros
-#define N1D 8 //NbSideElem // number of elements in each dimension
-#define InterpolationOrder 0 //OrderOfApprox // order of approximating polynomial
+// Definitions using macros from config.h
 #define NbElement2D N1D*N1D // number of elements in 2D
-#define NbQuadrPt1D InterpolationOrder+1 // number of quadrature points in 1D
-#define NbQuadrPt2D (InterpolationOrder+1)*(InterpolationOrder+1) // number of quadrature points in 2D
+#define NbQuadrPt1D (InterpolationOrder+1) // number of quadrature points in 1D
+#define NbQuadrPt2D NbQuadrPt1D*NbQuadrPt1D // number of quadrature points in 2D
 #define NbDoF NbElement2D*NbQuadrPt2D // number of degree of freedom
 
 /******************************************************************/
@@ -63,3 +66,5 @@ void RefEdge2Elem(int e, double s[NbQuadrPt1D], int nq1,
 void basisEdge_new(int e, int dir, double xq[NbQuadrPt1D], int p,
 	               struct EdgePhi *ePhi);
 void negmassinvmult(double invM[NbQuadrPt2D][NbQuadrPt2D],double R[NbDoF], double F[]);
+
+#endif // _DG_H

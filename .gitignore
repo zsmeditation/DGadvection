@@ -1,3 +1,8 @@
+# ./gitignore specifies intentionally untracked files to ignore
+
 dg
 result.txt
 *.o
+*.pbs
+!template.pbs # preserve this file though
+config.h
