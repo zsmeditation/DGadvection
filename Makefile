@@ -25,8 +25,8 @@ executable_name=dg_n$(N1D)_p$(InterpolationOrder)_t$(Nt)
 all: $(executable_name)
 
 # Sources and headers
-srcs = dg.c
-headers = dg.h
+srcs = dg.c buildmesh.c calcresidual.c negmassinvmult.c matrixAllocate.c initialize.c
+headers = MacVar.h Fcn.h
 
 # Objects from sources
 #  patsubst: function that replace pattern in text
@@ -34,9 +34,9 @@ objs = $(patsubst %.c,%.o,$(srcs))
 
 # Rule to compile sources
 #  for rule manual, refer to gnu.org about GNU make
-#  -c: compile source files without linking
+#  -c: compile source files without linking; generate only .o (object) files
 #  automatic variables: $^ for names of all prerequisites, $@ for name of target
-%.o: %.c
+%.o: %.c $(headers)
 	$(CC) $(CFLAGS) -c $^
 
 # Link executable

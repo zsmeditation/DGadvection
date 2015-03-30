@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <math.h>
 // Include own header file
-#include "dg.h"
+#include "MacVar.h"
+#include "Fcn.h"
 /******************************************************************/
 // Main function
 int main(int argc, char *argv[])
@@ -25,9 +26,15 @@ int main(int argc, char *argv[])
   struct Db1byNN Phi;
   int i, j;
   struct ResData resdata;
+
+  double** Vert; matrixAllocateDouble(&Vert, (N1D+1)*(N1D+1), 2); //each 1x2 row represents x,y coordinates of a vertex/node
+  int** E2N; matrixAllocateInt(&E2N, NbElement2D, 4);//element-to-node matrix
+  int** I2E; matrixAllocateInt(&I2E, 2*NbElement2D, 4); //internalEdge-to-element matrix
+  double** normals; matrixAllocateDouble(&normals, 2*NbElement2D, 2);//normal vectors
+  double h = L/N; //element side size; assuming square elements
   /********************/
   // Build a quad mesh
-  buildmesh(L, N);
+  buildmesh(L, N, h, &Vert, &E2N, &I2E, &normals);
   /********************/ 
   // Construct basis
   quad2d(nq1, 0, 1, &quadrature);
@@ -105,19 +112,19 @@ printf("i,j = %d,%d: Phi.x[j] = %le\n", i,j,Phi.x[j]);*/
   for (it=0; it<Nt; it++)
   {
   	  for (i=0; i<NbDoF; i++) {Us[i] = U[i];} // copy array
-      calcresidual(Us, &resdata); // update R
+      calcresidual(Us, &resdata, &I2E, &normals); // update R
       negmassinvmult(invM, R, F0); // calculate F0
 
       for (i=0; i<NbDoF; i++) {Us[i] = U[i] + 0.5*dt*F0[i];} // copy array
-      calcresidual(Us, &resdata); // update R
+      calcresidual(Us, &resdata, &I2E, &normals); // update R
       negmassinvmult(invM, R, F1); // calculate F1
       
       for (i=0; i<NbDoF; i++) {Us[i] = U[i] + 0.5*dt*F1[i];} // copy array
-      calcresidual(Us, &resdata); // update R
+      calcresidual(Us, &resdata, &I2E, &normals); // update R
       negmassinvmult(invM, R, F2); // calculate F2
       
       for (i=0; i<NbDoF; i++) {Us[i] = U[i] + dt*F2[i];} // copy array
-      calcresidual(Us, &resdata); // update R
+      calcresidual(Us, &resdata, &I2E, &normals); // update R
       negmassinvmult(invM, R, F3); // calculate F3
 
       for (i=0; i<NbDoF; i++)
@@ -147,81 +154,7 @@ printf("i,j = %d,%d: Phi.x[j] = %le\n", i,j,Phi.x[j]);*/
   /********************/
   return 0;
 }
-/******************************************************************/
-//Function definition: buildmesh
-void buildmesh(double L, int N)
-{
-  int k, ie, i, j, jj, kR, kU;
-  double s[N+1];
-  /* Note
-   * * i, j correspond to row, column number.
-   * * Counts are made row by row.
-   */
-   h = L/N;  // double divided by int is double
-  // 1D coordinates
-  for (i=0; i<=N; i++)
-  {
-    s[i] = i*h; 
-//good//printf("@%d: s = %le\n",s[i]);
-  }
-  // Vert
-  k = 0; // node count
-  for (i=0; i<=N; i++)
-  {
-    for (j=0; j<=N; j++)
-    {
-      Vert[k][0] = s[j];
-      Vert[k][1] = s[i];
-//good//printf("@%d: (%f, %f)\n;",k, Vert[k][0],Vert[k][1]);
-      k = k+1;
-    }
-  }
-  // E2N
-  k = 0; // element count
-  for (i=0; i<N; i++)
-  {
-    for (j=0; j<N; j++)
-    {
-      // Note that the element number starts from 1 and cannot be 0
-      jj = i*(N+1) + (j+1);
-      E2N[k][0] = jj;
-      E2N[k][1] = jj+1;
-      E2N[k][2] = jj+N+2;
-      E2N[k][3] = jj+N+1;
-//good//printf("@%d: (%d, %d, %d, %d)\n;",k, E2N[k][0],E2N[k][1],E2N[k][2],E2N[k][3]);
-      k = k+1;
-    }
-  }
-  // I2E
-  k = 0; // element count
-  ie = 0; // edge count
-  for (i=0; i<N; i++)
-  {
-    for (j=0; j<N; j++)
-    {
-      k = k+1;
-      kR = k+1; if(j==(N-1)){kR = kR-N;}
-      kU = k+N; if(i==(N-1)){kU = k-N*(N-1);}
-      I2E[ie][0] = k;
-      I2E[ie][1] = kR;
-      I2E[ie][2] = 2;
-      I2E[ie][3] = 4;
-      normals[ie][0] = 1;
-      normals[ie][1] = 0;
-// printf("@%d: (%d, %d), (%d, %d), normal(	x) = %1.1le\n;",ie, I2E[ie][0],I2E[ie][1],I2E[ie][2],I2E[ie][3],normals[ie][0]);
-      ie = ie+1;
-      I2E[ie][0] = k;
-      I2E[ie][1] = kU;
-      I2E[ie][2] = 3;
-      I2E[ie][3] = 1;
-      normals[ie][0] = 0;
-      normals[ie][1] = 1;
-// printf("@%d: (%d, %d), (%d, %d), normal(x) = %1.1le\n;",ie, I2E[ie][0],I2E[ie][1],I2E[ie][2],I2E[ie][3],normals[ie][0]);
-      ie = ie+1;
-    }
-  }
-  return;
-}
+
 /******************************************************************/
 //Function definition: quad2d
 void quad2d(int nq1, double a, double b, 
@@ -314,29 +247,6 @@ void lgwt(int nq1, double a, double b,
 }
 
 /******************************************************************/
-//Function definition: initialize
-void initialize(int N, int nq2, double xyn[NbQuadrPt2D][2], double h, double L)
-{
-  int m = 0, i,j,iq, Ndof = N*N*nq2;
-
-  for (j=0; j<N; j++)
-  {
-    for (i=0; i<N; i++)
-    {
-      for (iq=0; iq<nq2; iq++)
-      {
-        m = j*N + i; // current element count
-        xyglob[nq2*m + iq][0] = h * (i + xyn[iq][0]);
-        xyglob[nq2*m + iq][1] = h * (j + xyn[iq][1]);
-        U[nq2*m + iq] = exactsol(L, xyglob[nq2*m + iq], 0.0);
-//printf("@%d: (%le,%le)\n",nq2*m + iq, xyglob[nq2*m + iq][0],xyglob[nq2*m + iq][1]);
-//printf("@%d: U0 = %le\n",nq2*m + iq, U[nq2*m + iq]);
-      }
-    }
-  }
-}
-
-/******************************************************************/
 //Function definition: exactsol
 double exactsol(double L, double xyglob[2], double t)
 {
@@ -405,173 +315,7 @@ void basis(double xq[NbQuadrPt1D], int p, double xy[2],
     }
   }
 }
-/******************************************************************/
-//Function definition: calcresidual
-void calcresidual(double U[NbDoF], struct ResData *param)
-{
-  int m, i, j, q, Im, Imj, Imq, ie;
-  double Fx[param->nq2], Fy[param->nq2], u[NbQuadrPt2D] = {0.0}; 
-  struct DbGradNNbyNN GPhi;
-  // Input param: PhiMat, U, xq, xyq, p, nq2, wq, h, V, wq1, nq1
-  int nq1 = param->nq1, nq2 = param->nq2, p = param->p;
-  double h = param->h, V[2] = {param->V[0], param->V[1]};
 
-  int elemL, elemR, edgeL, edgeR;
-  double n[2];
-  int IL, IR;
-  struct EdgePhi ePhiL, ePhiR;
-  double uL, uR, UL[NbDoF], UR[NbDoF], Vdotn, Fhat[nq1];
-
-  double r;
-
-/*  //test: print out 1D quadrature nodes
-  printf("1d quadrature nodes\n");
-  printf("xq =:");
-   for (j=0; j<nq1; j++)
-   {
-     printf(" %le,", param->xq[j]);
-   }
-   printf(";\n");*/
-
-/*  //test: print out 2D quadrature nodes
-  printf("2d quadrature nodes\n");
-  for (i=0; i<nq1; i++)
-  {
-    printf("i=%d:", i);
-    for (j=0; j<nq1; j++)
-    {
-      printf(" (%le,%le)", param->xyq[i*nq1+j][0],param->xyq[i*nq1+j][1]);
-    }
-    printf(";\n");
-  }*/
-
-/*//test: print out spatial order
-printf("spatial order p = %d\n", p);*/
-
-  // contributions from element interiors; surface integral
-  gbasis(param->xq, param->xyq, p, &GPhi); // basis fcn gradient matrix
-  // Note this is gradient in reference space and needs to be converted to physical space
-
-/*  //test: print out gbasis fcns
-  printf("gbasis fcns\n");
-  for (i=0; i<nq2; i++)
-  {
-    printf("i=%d:",i);
-    for (j=0; j<nq2; j++)
-    {
-      printf(" %le,", GPhi.x[i][j]);
-    }
-    printf(";\n");
-  }*/
-
-  for (m=0; m<NbElement2D; m++) // loop over elements
-  {
-    for (i=0; i<nq2; i++) // loop over unknowns
-    { 
-      // re-initialize u	
-      for (q=0; q<nq2; q++)
-      {
-        u[q] = 0.0;
-      }
-
-      for (q=0; q<nq2; q++)
-      {
-    	  Imq = m*nq2 + q;
-	      for (j=0; j<nq2; j++)
-	      {
-	        Imj = m*nq2 + j;
-	        u[q] = u[q] + param->PhiMat[q][j] * U[Imj];  
-	      }
-	      Fx[q] = u[q]*V[0] * param->wq[q]; 
-	      Fy[q] = u[q]*V[1] * param->wq[q];
-      }
-
-      // find Fx and Fy
-      Im = m*nq2 + i;
-	  // contributions to residual from element interiors
-	  r = 0.0;
-	  for (q=0; q<nq2; q++)
-	  {
-	    r = r - h*h*((GPhi.x[q][i]*Fx[q] + GPhi.y[q][i]*Fy[q]) / h);
-	  }
-	  R[Im] = r;
-
-// 
-// printf("elem %d, basis %d, R_interior = %le\n", m,i,R[Im]);
-    }
-  }
-  
-  // contributions from interior edges
-  for (ie=0; ie<2*NbElement2D; ie++)
-  {
-    elemL = I2E[ie][0];
-    elemR = I2E[ie][1];
-    edgeL = I2E[ie][2];
-    edgeR = I2E[ie][3];
-// printf("ie=%d, elemL=%d, elemR=%d\n", ie, elemL, elemR);
-    n[0] = normals[ie][0]; n[1] = normals[ie][1];
-    basisEdge_new(edgeL, 1, param->xq, p, &ePhiL); // counterclockwise
-    basisEdge_new(edgeR, 0, param->xq, p, &ePhiR); // clockwise
-
-//good//test
-/*for (i=0; i<nq1; i++)
-{
-	printf("PhiL @ 1D node %d: ", i);
-	for (j=0; j<nq2; j++)
-	{
-		printf("%le ", ePhiL.x[i][j]);
-	}
-	printf("\n\n");
-}
-for (i=0; i<nq1; i++)
-{
-	printf("PhiR @ 1D node %d: ", i);
-	for (j=0; j<nq2; j++)
-	{
-		printf("%le ", ePhiR.x[i][j]);
-	}
-	printf("\n\n");
-}*/
-    
-    for (i=0; i<nq2; i++)
-    {
-      
-      for (q=0; q<nq1; q++) // loop over nodes on an edge (1D)
-      {
-      	uL = 0.0; uR = 0.0;
-        for (j=0; j<nq2; j++) // loop over different basis fcns
-        {
-          IL = (elemL-1)*nq2 + j;
-          IR = (elemR-1)*nq2 + j;
-          uL = uL + ePhiL.x[q][j]*U[IL];
-          uR = uR + ePhiR.x[q][j]*U[IR];
-        }
-        // calculate upwind flux
-        Vdotn = V[0]*n[0] + V[1]*n[1];
-        if (Vdotn > 0)
-        {
-          Fhat[q] = uL*Vdotn * param->wq1[q];
-        }
-        else
-        {
-          Fhat[q] = uR*Vdotn * param->wq1[q];
-        }
-      }
-
-      // update residuals  
-      for (q=0; q<nq1; q++)  // loop over different basis fcns
-      {
-        IL = (elemL-1)*nq2 + i;
-        IR = (elemR-1)*nq2 + i;
-        R[IL] = R[IL] + h*ePhiL.x[q][i]*Fhat[q];
-        R[IR] = R[IR] - h*ePhiR.x[q][i]*Fhat[q];
-// printf("@ elem %d, basis %d, R_IL = %le\n", m,i,R[IL]);
-// printf("@ elem %d, basis %d, R_IR = %le\n", m,i,R[IR]);
-      }
-    }
-  }
-  return;
-}
 /******************************************************************/
 //Function definition: glagrange
 double glagrange(double xq[NbQuadrPt1D], int j, int p, double x)
@@ -773,17 +517,4 @@ void basisEdge_new(int e, int dir, double xq[NbQuadrPt1D], int p,
     }
   }
 }
-/******************************************************************/
-//Function definition: negmassinvmult
-void negmassinvmult(double invM[NbQuadrPt2D][NbQuadrPt2D],double R[NbDoF], double F[])
-{
-  int m, Im, q;
-  for (m=0; m<NbElement2D; m++) // loop over elements
-  {
-    for (q=0; q<NbQuadrPt2D; q++) // loop over basis fcns
-    {
-      Im = m*NbQuadrPt2D + q;
-      F[Im] = - invM[q][q] * R[Im]; // assume M is diagonal
-    }
-  }
-}
+
